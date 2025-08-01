@@ -74,10 +74,7 @@ def send_ids(message):
     history(message.text, message.from_user.id)
     if is_whitelisted(message.from_user.id):
         ids = """Вот список id :
-Дима : 7624961023
-Костя : 7904536383
-Костя (акк телефона) : 6088431325
-Максим : 5349694299"""
+IDS"""
         bot.reply_to(message, ids)
     else:
         bot.reply_to(message, "Вы не в белом списке❌")
