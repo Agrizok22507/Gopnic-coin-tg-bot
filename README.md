@@ -7,4 +7,5 @@
 5.Open "Gop-Coin.py" and have a fun with your friends.
 
 !WARNING!
+
 !PROJECT ONLY FOR A FUN, NOT FOR COMMERCIAL PURPOSES!
