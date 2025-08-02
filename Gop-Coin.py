@@ -17,7 +17,10 @@ help_text = """Команды гоп-коин бота:
 /list - посмотреть список доната.
 /info - посмотреть информацию о гоп-коине.
 /ids - посмотреть список id.
-/setgame - сделать статус игры."""
+/setgame - сделать статус игры.
+/buy - купить гоп-коины.
+/promo - ввести промокод.
+/changelist - посмотреть изменения в обновление."""
 
 def history(text, iid):
     try:
@@ -266,6 +269,79 @@ def error_report(message):
             file.write(f"\n[{datetime.datetime.now()}] Ошибка от {message.from_user.id}: {error_desc}")
     except Exception as e:
         bot.reply_to(message, f"Использование: /error <описание>\nОшибка: {e}")
+
+@bot.message_handler(commands=['buy'])
+def error_report(message):
+    history(message.text, message.from_user.id)
+    if not is_whitelisted(message.from_user.id):
+        bot.reply_to(message, "Вы не в белом списке❌")
+        return
+    try:
+        buy_desc = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else "Не указано"
+        bot.reply_to(message, f"Заявка на покупку гоп-коинов принята: {buy_desc} GNC, приготовьте {buy_desc*20} RUB при личной встрече.")
+        with open(folder + "/data/history.txt", "a", encoding='utf-8') as file:
+            file.write(f"\n[{datetime.datetime.now()}] Заявка на покупку {message.from_user.id}: {buy_desc}.")
+    except Exception as e:
+        bot.reply_to(message, f"Использование: /error <описание>\nОшибка: {e}")
+
+@bot.message_handler(commands=['promo'])
+def promo_handler(message):
+    history(message.text, message.from_user.id)
+    if not is_whitelisted(message.from_user.id):
+        bot.reply_to(message, "Вы не в белом списке❌")
+        return
+    
+    try:
+        split = message.text.split()
+        if len(split) < 2:
+            bot.reply_to(message, "Использование: /promo <код>")
+            return
+        promo_code = split[1]
+        with open(folder + "/data/promocodes.json", 'r+', encoding='utf-8') as file:
+            promocodes = json.load(file)
+            if promo_code not in promocodes:
+                bot.reply_to(message, "❌ Неверный промокод")
+                return
+            if promocodes[promo_code] == 0:
+                bot.reply_to(message, "⚠️ Этот промокод уже использован")
+                return
+            
+            promo_amount = promocodes[promo_code]
+            with open(folder + "/data/balance.json", 'r+', encoding='utf-8') as bal_file:
+                balance_data = json.load(bal_file)
+                user_id = str(message.from_user.id)
+                current_balance = balance_data.get(user_id, 0)
+                if isinstance(current_balance, (list, tuple)):
+                    current_balance = current_balance[0]
+                current_balance = float(current_balance)
+                balance_data[user_id] = round(current_balance + promo_amount, 4)
+                bal_file.seek(0)
+                json.dump(balance_data, bal_file, indent=4, ensure_ascii=False)
+                bal_file.truncate()
+            promocodes[promo_code] = 0
+            file.seek(0)
+            json.dump(promocodes, file, indent=4, ensure_ascii=False)
+            file.truncate()
+            
+            bot.reply_to(message, f"✅ Промокод активирован! Начислено: {promo_amount} GNC")
+            
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка при активации промокода: {str(e)}")
+        print(f"Promo error: {e}")
+
+@bot.message_handler(commands=['changelist'])
+def changelist(message):
+    history(message.text, message.from_user.id)
+    if not is_whitelisted(message.from_user.id):
+        bot.reply_to(message, "Вы не в белом списке❌")
+        return
+    
+    try:
+        with open(folder + "/data/ChangeList.txt", 'r', encoding="UTF-8") as file:
+            read = file.read()
+        bot.reply_to(message, read)
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка : {e}")
 
 print("Bot activated!")
 bot.infinity_polling()
